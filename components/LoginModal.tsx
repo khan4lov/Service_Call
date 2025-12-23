@@ -5,8 +5,8 @@ import { supabase } from '../services/supabaseClient';
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: (user: any) => void; // same as before
-  users: any[]; // unused but kept for compatibility
+  onLogin: (user: any) => void;
+  users: any[];
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => {
@@ -16,34 +16,25 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
 
   if (!isOpen) return null;
 
-  // Convert username → internal email
-  const usernameToEmail = (uname: string) => {
-    return `${uname}@serviceoncall.local`.toLowerCase();
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    const email = usernameToEmail(username);
+    // Query Supabase directly for username + password
+    const { data: user, error: loginError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('username', username)
+      .eq('password', password)
+      .single();
 
-    const { data, error: loginError } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-
-    if (loginError) {
-      setError("Invalid username or password");
+    if (loginError || !user) {
+      setError('Invalid username or password');
       return;
     }
 
-    // build user object to match your existing app logic
-    const loggedInUser = {
-      username,
-      role: "admin",  // adjust if needed later
-    };
-
-    onLogin(loggedInUser);
+    // Pass user to the app (same as before)
+    onLogin(user);
     onClose();
   };
 
