@@ -1,164 +1,136 @@
-
 import { createClient } from '@supabase/supabase-js';
-import { INITIAL_USERS, INITIAL_BOOKINGS, INITIAL_REGISTRATIONS } from '../constants';
-import type { User, BookingDetails, RegistrationForm, CategoryType } from '../types';
 
 // ============================================================================
-// CONFIGURATION
+// SUPABASE CLIENT (ONE LOGIN SYSTEM FOR ALL USERS)
 // ============================================================================
 
-// Declare process to avoid TypeScript errors
-declare const process: any;
+// (🔥 You ALREADY provided these — safe to embed or use via .env)
+const SUPABASE_URL = "https://jlfscyobofwzvuznwfsj.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpsZnNjeW9ib2Z3enZ1em53ZnNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0NjkwNTAsImV4cCI6MjA4MjA0NTA1MH0.W_87Q-3bQzfpU9PxS6ZHtTIxdM9JJ6ArexWvYO3p3DI";
 
-// Get keys from injected process.env (configured in vite.config.ts)
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
-
-// Checks if the user has actually set the keys
-export const isSupabaseConfigured = 
-  SUPABASE_URL.length > 0 && 
-  SUPABASE_ANON_KEY.length > 0 && 
-  SUPABASE_URL.startsWith('https://');
-
-// Create the client
-export const supabase = isSupabaseConfigured 
-  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
+// Create the Supabase client
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ============================================================================
-// DATA API (Handles switching between Local Memory and Real Database)
+// USER AUTH API (Login / Signup / Logout)
 // ============================================================================
 
-// Local memory storage (fallback if no DB connected)
-let localUsers = [...INITIAL_USERS];
-let localBookings = [...INITIAL_BOOKINGS];
-let localRegistrations = [...INITIAL_REGISTRATIONS];
+export const authAPI = {
+  signup: async (email: string, password: string, fullName: string, phone: string) => {
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+          phone: phone,
+          role: "user"      // all users default role
+        }
+      }
+    });
 
-export const api = {
-  
-  fetchAllData: async () => {
-    if (!supabase) {
-      console.log('Using Local Demo Data (No Database Connected)');
-      return {
-        users: localUsers,
-        bookings: localBookings,
-        registrations: localRegistrations
-      };
-    }
+    if (authError) throw authError;
 
-    try {
-      const [usersRes, bookingsRes, regRes] = await Promise.all([
-        supabase.from('users').select('*'),
-        supabase.from('bookings').select('*').order('created_at', { ascending: false }),
-        supabase.from('registrations').select('*').order('submitted_at', { ascending: false })
-      ]);
-
-      if (usersRes.error) throw usersRes.error;
-
-      const mapBooking = (b: any): BookingDetails => ({
-        id: b.id.toString(),
-        serviceId: b.service_id,
-        serviceName: b.service_name,
-        category: b.category as CategoryType,
-        date: b.date,
-        time: b.time,
-        address: b.address,
-        customerName: b.customer_name,
-        customerPhone: b.customer_phone,
-        price: Number(b.price),
-        status: b.status,
-        providerId: b.provider_id,
-        createdAt: b.created_at
-      });
-
-      const mapReg = (r: any): RegistrationForm => ({
-        id: r.id.toString(),
-        fullName: r.full_name,
-        phone: r.phone,
-        category: r.category,
-        experience: r.experience,
-        city: r.city,
-        submittedAt: r.submitted_at
-      });
-
-      return {
-        users: usersRes.data || [],
-        bookings: (bookingsRes.data || []).map(mapBooking),
-        registrations: (regRes.data || []).map(mapReg)
-      };
-
-    } catch (error) {
-      console.error("Supabase connection error:", error);
-      return { users: localUsers, bookings: localBookings, registrations: localRegistrations };
-    }
+    return authData;
   },
 
-  createBooking: async (booking: BookingDetails) => {
-    if (!supabase) {
-      localBookings = [booking, ...localBookings];
-      return booking;
-    }
+  login: async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    if (error) throw error;
 
-    const { data, error } = await supabase.from('bookings').insert([{
-      service_id: booking.serviceId,
-      service_name: booking.serviceName,
-      category: booking.category,
-      date: booking.date,
-      time: booking.time,
-      address: booking.address,
-      customer_name: booking.customerName,
-      customer_phone: booking.customerPhone,
-      price: booking.price,
-      status: 'PENDING'
-    }]).select();
-    
+    return data;
+  },
+
+  logout: async () => {
+    await supabase.auth.signOut();
+  },
+
+  getCurrentUser: async () => {
+    const { data } = await supabase.auth.getUser();
+    return data.user || null;
+  }
+};
+
+// ============================================================================
+// BOOKINGS API
+// ============================================================================
+
+export const bookingAPI = {
+  createBooking: async (booking: any) => {
+    const { data, error } = await supabase
+      .from('bookings')
+      .insert([{
+        service_id: booking.serviceId,
+        service_name: booking.serviceName,
+        category: booking.category,
+        date: booking.date,
+        time: booking.time,
+        address: booking.address,
+        customer_name: booking.customerName,
+        customer_phone: booking.customerPhone,
+        price: booking.price,
+        status: "PENDING",
+        provider_id: booking.providerId || null
+      }])
+      .select();
+
     if (error) throw error;
     return data[0];
   },
 
-  updateBooking: async (bookingId: string, updates: Partial<BookingDetails>) => {
-    if (!supabase) {
-      localBookings = localBookings.map(b => b.id === bookingId ? { ...b, ...updates } : b);
-      return;
-    }
+  updateBookingStatus: async (bookingId: string, status: string, providerId?: string) => {
+    const updates: any = { status };
+    if (providerId) updates.provider_id = providerId;
 
-    const dbUpdates: any = {};
-    if (updates.status) dbUpdates.status = updates.status;
-    if (updates.providerId) dbUpdates.provider_id = updates.providerId;
+    const { error } = await supabase
+      .from('bookings')
+      .update(updates)
+      .eq('id', bookingId);
 
-    await supabase.from('bookings').update(dbUpdates).eq('id', bookingId);
+    if (error) throw error;
   },
 
-  createRegistration: async (reg: RegistrationForm) => {
-    if (!supabase) {
-      localRegistrations = [reg, ...localRegistrations];
-      return;
-    }
+  getAllBookings: async () => {
+    const { data, error } = await supabase
+      .from('bookings')
+      .select("*")
+      .order("created_at", { ascending: false });
 
-    await supabase.from('registrations').insert([{
-      full_name: reg.fullName,
-      phone: reg.phone,
-      category: reg.category,
-      experience: reg.experience,
-      city: reg.city
-    }]);
+    if (error) throw error;
+    return data;
+  }
+};
+
+// ============================================================================
+// PROVIDER REGISTRATION API
+// ============================================================================
+
+export const providerAPI = {
+  registerProvider: async (form: any) => {
+    const { error } = await supabase.from('registrations').insert([
+      {
+        full_name: form.fullName,
+        phone: form.phone,
+        category: form.category,
+        experience: form.experience,
+        city: form.city,
+        submitted_at: new Date().toISOString()
+      }
+    ]);
+
+    if (error) throw error;
   },
 
-  createUser: async (user: User) => {
-    if (!supabase) {
-      localUsers = [...localUsers, user];
-      return;
-    }
+  getAllRegistrations: async () => {
+    const { data, error } = await supabase
+      .from("registrations")
+      .select("*")
+      .order("submitted_at", { ascending: false });
 
-    await supabase.from('users').insert([user]);
-  },
-
-  deleteUser: async (username: string) => {
-    if (!supabase) {
-      localUsers = localUsers.filter(u => u.username !== username);
-      return;
-    }
-
-    await supabase.from('users').delete().eq('username', username);
+    if (error) throw error;
+    return data;
   }
 };

@@ -1,34 +1,50 @@
-
 import React, { useState } from 'react';
-import type { User } from '../types';
 import { X, Lock, User as UserIcon } from 'lucide-react';
+import { supabase } from '../services/supabaseClient';
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: (user: User) => void;
-  users: User[];
+  onLogin: (user: any) => void; // same as before
+  users: any[]; // unused but kept for compatibility
 }
 
-const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, users }) => {
+const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Convert username → internal email
+  const usernameToEmail = (uname: string) => {
+    return `${uname}@serviceoncall.local`.toLowerCase();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    const user = users.find(u => u.username === username && u.password === password);
-    
-    if (user) {
-      onLogin(user);
-      onClose();
-    } else {
-      setError('Invalid username or password');
+    const email = usernameToEmail(username);
+
+    const { data, error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (loginError) {
+      setError("Invalid username or password");
+      return;
     }
+
+    // build user object to match your existing app logic
+    const loggedInUser = {
+      username,
+      role: "admin",  // adjust if needed later
+    };
+
+    onLogin(loggedInUser);
+    onClose();
   };
 
   return (
@@ -84,8 +100,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, users
             </form>
             
             <div className="mt-6 text-center bg-slate-50 p-3 rounded text-xs text-slate-500 border border-slate-100">
-                <p><strong>Admin Demo:</strong> admin / password</p>
-                <p><strong>Provider Demo:</strong> electrician / password</p>
+                <p><strong>Admin Login:</strong> soc123 / Soc@123</p>
             </div>
         </div>
       </div>
