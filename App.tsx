@@ -21,6 +21,7 @@ import ProviderDashboard from './components/ProviderDashboard';
 import { getServiceRecommendation } from './services/geminiService';
 
 // ✅ NEW: Supabase APIs
+// Ensure bookingAPI in supabaseClient has getAllBookings() implemented
 import { supabase, bookingAPI, providerAPI } from './services/supabaseClient';
 
 const App: React.FC = () => {
@@ -29,7 +30,7 @@ const App: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<CategoryType | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
+   
   // Data State
   const [users, setUsers] = useState<User[]>([]);
   const [bookings, setBookings] = useState<BookingDetails[]>([]);
@@ -51,36 +52,42 @@ const App: React.FC = () => {
 
 
   /* ------------------------------------------------------------------
-      ✅ NEW: REFRESH DATA (Supabase instead of old API)
+      ✅ UPDATED: REFRESH DATA (Using bookingAPI logic as requested)
   ------------------------------------------------------------------ */
   const refreshData = async () => {
     setIsLoadingData(true);
 
-    const { data: bookingsData } = await supabase
-      .from("bookings")
-      .select("*")
-      .order("created_at", { ascending: false });
+    try {
+      // 1. Load Bookings using the API abstraction (Requested Logic)
+      // Note: Ensure bookingAPI.getAllBookings() is defined in your service file
+      const bookingsData = await bookingAPI.getAllBookings();
+      setBookings(bookingsData || []);
 
-    const { data: regData } = await supabase
-      .from("registrations")
-      .select("*")
-      .order("submitted_at", { ascending: false });
+      // 2. Load Registrations (Keeping existing supabase logic for compatibility)
+      const { data: regData } = await supabase
+        .from("registrations")
+        .select("*")
+        .order("submitted_at", { ascending: false });
+      setRegistrations(regData || []);
 
-    const { data: usersData } = await supabase
-      .from("users")
-      .select("*");
+      // 3. Load Users (Keeping existing supabase logic for compatibility)
+      const { data: usersData } = await supabase
+        .from("users")
+        .select("*");
+      setUsers(usersData || []);
 
-    setBookings(bookingsData || []);
-    setRegistrations(regData || []);
-    setUsers(usersData || []);
-    setIsLoadingData(false);
+    } catch (err) {
+      console.error("Failed to load data", err);
+    } finally {
+      setIsLoadingData(false);
+    }
   };
 
   useEffect(() => {
     refreshData();
   }, []);
 
-  
+   
   /* ------------------------------------------------------------------
       UI Helpers
   ------------------------------------------------------------------ */
@@ -115,8 +122,13 @@ const App: React.FC = () => {
   };
 
   const handleConfirmBooking = async (newBooking: BookingDetails) => {
+    // Optimistic update
     setBookings(prev => [newBooking, ...prev]);
+    
+    // API Call
     await bookingAPI.createBooking(newBooking);
+    
+    // Refresh to get server state
     refreshData();
   };
 
@@ -207,7 +219,7 @@ const App: React.FC = () => {
     } 
     else if (recommendation.recommendedCategory) {
       const categoryMatch = Object.values(CategoryType).find(c => c === recommendation.recommendedCategory);
-      
+       
       if (categoryMatch) {
         setFilteredServices(SERVICES.filter(s => s.category === categoryMatch));
       } else {
@@ -275,11 +287,11 @@ const App: React.FC = () => {
   ------------------------------------------------------------------ */
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
-      
+       
       {/* Header */}
       <header className="bg-white sticky top-0 z-40 shadow-sm border-b border-gray-100">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          
+           
           {/* Logo */}
           <div 
             className="flex items-center gap-2 cursor-pointer" 
@@ -326,7 +338,7 @@ const App: React.FC = () => {
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-t border-gray-100 p-4 absolute w-full shadow-lg z-50">
             <div className="flex flex-col gap-4">
-              
+               
               {currentUser && (
                 <div className="bg-blue-50 p-3 rounded-lg flex items-center justify-between">
                   <span className="font-bold text-slate-800">{currentUser.name}</span>
@@ -335,7 +347,7 @@ const App: React.FC = () => {
               )}
 
               <button onClick={() => navigateTo('HOME')} className="text-left font-medium text-slate-800">Home</button>
-              
+               
               {currentUser && (
                 <button 
                   onClick={() => navigateTo('DASHBOARD')} 
@@ -418,7 +430,7 @@ const App: React.FC = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
-                
+                 
                 <button 
                   type="submit" 
                   className="absolute right-2 top-2 bottom-2 bg-accent hover:bg-accent-hover text-white px-6 rounded-lg font-medium transition-colors"
@@ -517,7 +529,7 @@ const App: React.FC = () => {
                   {TESTIMONIALS.map(t => (
                     <div key={t.id} className="bg-slate-50 p-6 rounded-2xl shadow-sm border border-slate-100">
                       <p className="text-slate-600 mb-6 italic">"{t.content}"</p>
-                      
+                       
                       <div className="flex items-center gap-3">
                         <img src={t.image} alt={t.name} className="w-10 h-10 rounded-full object-cover" />
                         <div>
@@ -720,4 +732,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-
