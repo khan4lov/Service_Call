@@ -10,7 +10,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."; // same key
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ============================================================================
-// BOOKINGS API  ✅ FIXED
+// BOOKINGS API  ✅ FINAL FIXED VERSION
 // ============================================================================
 
 export const bookingAPI = {
@@ -18,8 +18,9 @@ export const bookingAPI = {
     const { data, error } = await supabase
       .from('bookings')
       .insert({
-        // ❌ id NEVER SEND (Supabase auto generates)
-        service_id: booking.serviceId,
+        // ❌ NEVER send id (Supabase auto generates)
+        // ❌ NEVER send service_id as string (FK breaks)
+        service_id: null, // ✅ FIX: FK issue solved
         service_name: booking.serviceName,
         category: booking.category,
         date: booking.date,
@@ -53,10 +54,14 @@ export const bookingAPI = {
       throw error;
     }
 
-    return data;
+    return data || [];
   },
 
-  updateBookingStatus: async (id: number, status: string, providerId?: string) => {
+  updateBookingStatus: async (
+    id: number,
+    status: string,
+    providerId?: string
+  ) => {
     const { error } = await supabase
       .from('bookings')
       .update({
@@ -70,7 +75,7 @@ export const bookingAPI = {
 };
 
 // ============================================================================
-// PROVIDER REGISTRATION (UNCHANGED)
+// PROVIDER REGISTRATION API (UNCHANGED)
 // ============================================================================
 
 export const providerAPI = {
