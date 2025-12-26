@@ -1,40 +1,68 @@
+// src/types.ts
+
 export enum CategoryType {
-  AC_APPLIANCE = 'AC & Appliances',
-  CLEANING = 'Cleaning',
-  PLUMBING = 'Plumbing',
-  ELECTRICIAN = 'Electrician',
-  PAINTING = 'Painting',
-  BEAUTY_MEN = 'Beauty for Men',
-  BEAUTY_WOMEN = 'Beauty for Women',
-  PEST_CONTROL = 'Pest Control',
-  CARPENTRY = 'Carpentry',
-  CAR_RENTAL = 'Car Rental',
-  LABOUR = 'Labour',
-  MISTRI = 'Mistri',
-  HOUSE_HELPER = 'House Helper',
-  WELDING = 'Welding',
-  ROOF_PANEL = 'Roof Panel'
+  AC_APPLIANCE = "AC & Appliance",
+  CLEANING = "Cleaning",
+  PLUMBING = "Plumbing",
+  ELECTRICIAN = "Electrician",
+  PAINTING = "Painting",
+  BEAUTY_MEN = "Beauty (Men)",
+  BEAUTY_WOMEN = "Beauty (Women)",
+  PEST_CONTROL = "Pest Control",
+  CARPENTRY = "Carpentry",
+  CAR_RENTAL = "Car Rental",
+  LABOUR = "Labour",
+  MISTRI = "Mistri",
+  HOUSE_HELPER = "House Helper",
+  WELDING = "Welding",
+  ROOF_PANEL = "Roof Panel"
 }
 
 export type ViewState =
-  | 'HOME'
-  | 'CATEGORY'
-  | 'SEARCH_RESULTS'
-  | 'ABOUT_US'
-  | 'REGISTER_PROFESSIONAL'
-  | 'DASHBOARD';
+  | "HOME"
+  | "CATEGORY"
+  | "SEARCH_RESULTS"
+  | "ABOUT_US"
+  | "REGISTER_PROFESSIONAL"
+  | "DASHBOARD";
 
+/* ------------------------------------------------------------------ */
+/* SERVICE */
+/* ------------------------------------------------------------------ */
 export interface Service {
   id: string;
   name: string;
-  category: CategoryType;
   description: string;
   price: number;
+  category: CategoryType;
+
+  // ✅ USED EVERYWHERE
+  image?: string;
+  duration?: string;
+  rating?: number;
 }
 
+/* ------------------------------------------------------------------ */
+/* USER */
+/* ------------------------------------------------------------------ */
+export interface User {
+  id?: number;
+  username: string;
+  name: string;
+  role: "ADMIN" | "PROVIDER" | "USER";
+
+  // ✅ used in constants & login
+  password?: string;
+
+  // ✅ provider dashboard
+  category?: CategoryType;
+}
+
+/* ------------------------------------------------------------------ */
+/* BOOKING */
+/* ------------------------------------------------------------------ */
 export interface BookingDetails {
-  id?: number;          // ✅ OPTIONAL (Supabase generates)
-  createdAt?: string;   // ✅ OPTIONAL
+  id?: number;
   serviceId: string;
   serviceName: string;
   category: CategoryType;
@@ -44,21 +72,43 @@ export interface BookingDetails {
   customerName: string;
   customerPhone: string;
   price: number;
-  status: 'PENDING' | 'ASSIGNED' | 'COMPLETED';
-  provider_id?: string | null;
+  status: "PENDING" | "ASSIGNED" | "COMPLETED";
+
+  createdAt?: string;
+
+  // ✅ supabase column
+  provider_id?: string;
 }
 
+/* ------------------------------------------------------------------ */
+/* PROVIDER */
+/* ------------------------------------------------------------------ */
+export interface Provider {
+  id: string;
+  name: string;
+  rating: number;
+  categories: CategoryType[];
+  image?: string;
+}
+
+/* ------------------------------------------------------------------ */
+/* TESTIMONIAL */
+/* ------------------------------------------------------------------ */
+export interface Testimonial {
+  id: number;
+  name: string;
+  content: string;
+  role: string;
+  image: string;
+}
+
+/* ------------------------------------------------------------------ */
+/* REGISTRATION */
+/* ------------------------------------------------------------------ */
 export interface RegistrationForm {
   fullName: string;
   phone: string;
   category: CategoryType;
   experience: string;
   city: string;
-}
-
-export interface User {
-  id?: string;
-  name: string;
-  username: string;
-  role: 'ADMIN' | 'PROVIDER' | 'USER';
 }
