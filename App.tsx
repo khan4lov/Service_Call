@@ -709,14 +709,7 @@ const App: React.FC = () => {
           onConfirmBooking={handleConfirmBooking}
         />
       )}
-
-      <LoginModal 
-        isOpen={isLoginOpen} 
-        onClose={() => setIsLoginOpen(false)} 
-        onLogin={handleLogin}
-        users={users}
-      />
-
+      
     </div>
   );
 };
