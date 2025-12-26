@@ -10,11 +10,14 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // =======================================================
 
 export const bookingAPI = {
+  // ✅ UPDATED: createBooking with Debug Logs
   createBooking: async (booking: any) => {
+    console.log("📤 Booking payload:", booking);
+
     const { data, error } = await supabase
       .from('bookings')
       .insert({
-        service_id: Number(booking.serviceId),   // 🔴 ensure int8
+        service_id: Number(booking.serviceId),
         service_name: booking.serviceName,
         category: booking.category,
         date: booking.date,
@@ -24,17 +27,17 @@ export const bookingAPI = {
         customer_phone: booking.customerPhone,
         price: booking.price,
         status: 'PENDING',
-        provider_id: null  // ✅ OK only if column allows NULL
+        provider_id: null
       })
       .select()
       .single();
 
     if (error) {
-      console.error("❌ SUPABASE BOOKING INSERT ERROR:", error);
+      console.error("❌ SUPABASE ERROR:", error);
       throw error;
     }
 
-    console.log("✅ BOOKING SAVED:", data);
+    console.log("✅ BOOKING SAVED IN DB:", data);
     return data;
   },
 
@@ -49,6 +52,44 @@ export const bookingAPI = {
       throw error;
     }
 
+    return data;
+  },
+
+  // ✅ ADDED: Required for Admin Dashboard to assign bookings
+  updateBookingStatus: async (bookingId: number, status: string, providerUsername?: string) => {
+    const updateData: any = { status };
+    if (providerUsername) {
+        updateData.provider_id = providerUsername; // Storing username as ID for simplicity
+    }
+
+    const { data, error } = await supabase
+      .from('bookings')
+      .update(updateData)
+      .eq('id', bookingId)
+      .select();
+
+    if (error) {
+      console.error("❌ UPDATE STATUS ERROR:", error);
+      throw error;
+    }
+    return data;
+  }
+};
+
+// =======================================================
+// PROVIDER API ✅ ADDED FOR REGISTRATION
+// =======================================================
+export const providerAPI = {
+  registerProvider: async (providerData: any) => {
+    const { data, error } = await supabase
+      .from('registrations')
+      .insert([providerData])
+      .select();
+
+    if (error) {
+      console.error("❌ REGISTRATION ERROR:", error);
+      throw error;
+    }
     return data;
   }
 };
