@@ -20,7 +20,7 @@ import ProviderDashboard from './components/ProviderDashboard';
 
 import { getServiceRecommendation } from './services/geminiService';
 
-// ✅ NEW: Supabase APIs
+// ✅ NEW: Supabase APIs import
 import { supabase, bookingAPI, providerAPI } from './services/supabaseClient';
 
 const App: React.FC = () => {
@@ -51,13 +51,13 @@ const App: React.FC = () => {
 
 
   /* ------------------------------------------------------------------
-      ✅ REFRESH DATA
+      ✅ REFRESH DATA (Load from Supabase)
   ------------------------------------------------------------------ */
   const refreshData = async () => {
     setIsLoadingData(true);
 
     try {
-      // 1. Load Bookings using the API abstraction
+      // 1. Load Bookings
       const bookingsData = await bookingAPI.getAllBookings();
       setBookings(bookingsData || []);
 
@@ -112,40 +112,37 @@ const App: React.FC = () => {
 
 
   /* ------------------------------------------------------------------
-      Booking Handlers (updated)
+      Booking Handlers (✅ FIXED LOGIC)
   ------------------------------------------------------------------ */
   const handleBookService = (service: Service) => {
     setSelectedService(service);
     setIsBookingOpen(true);
   };
 
-  // ✅ FIX: Correct payload construction logic
-  const handleConfirmBooking = async (formData: any) => {
+  // ✅ CRITICAL UPDATE: Accepts full object from BookingModal
+  const handleConfirmBooking = async (finalBookingData: BookingDetails) => {
+    console.log("📦 Received from Modal:", finalBookingData);
+
     try {
-      const payload = {
-        serviceId: selectedService?.id,   // number/string both ok (API converts)
-        serviceName: selectedService?.name,
-        category: selectedService?.category,
-        date: formData.date,
-        time: formData.time,
-        address: formData.address,
-        customerName: formData.customerName,
-        customerPhone: formData.customerPhone,
-        price: selectedService?.price
-      };
+      // Send the ready-made object directly to API
+      // (Do NOT reconstruct it here, or you risk losing data)
+      const savedBooking = await bookingAPI.createBooking(finalBookingData);
 
-      console.log("📦 App payload:", payload);
+      console.log("✅ Saved to DB:", savedBooking);
 
-      const saved = await bookingAPI.createBooking(payload);
+      setBookings(prev => [savedBooking, ...prev]);
+      
+      // Don't close immediately here if you want to show "Success" in modal first,
+      // But based on your modal logic, it shows step 3 then user clicks "Done" to close.
+      // However, usually onConfirmBooking is awaited by the modal.
+      
+      // We will only refresh data here. The modal handles the "Success" UI step.
+      await refreshData(); 
 
-      console.log("✅ BOOKING SAVED:", saved);
-
-      setBookings(prev => [saved, ...prev]);
-      setIsBookingOpen(false);
-      setSelectedService(null);
     } catch (err) {
-      console.error("❌ BOOKING FAILED:", err);
+      console.error("❌ Booking Failed in App:", err);
       alert("Booking failed. Please try again.");
+      throw err; // Throw so Modal knows it failed
     }
   };
 
@@ -153,9 +150,13 @@ const App: React.FC = () => {
       Provider Registration
   ------------------------------------------------------------------ */
   const handleRegistrationSubmit = async (data: RegistrationForm) => {
-    setRegistrations(prev => [data, ...prev]);
-    await providerAPI.registerProvider(data);
-    refreshData();
+    try {
+      setRegistrations(prev => [data, ...prev]);
+      await providerAPI.registerProvider(data);
+      refreshData();
+    } catch (error) {
+      console.error("Registration failed", error);
+    }
   };
 
 
@@ -170,7 +171,6 @@ const App: React.FC = () => {
   const handleDeleteUser = async (username: string) => {
     if (!window.confirm(`Are you sure you want to delete user ${username}?`)) return;
     setUsers(prev => prev.filter(u => u.username !== username));
-    // TODO: implement real delete logic if needed
     refreshData();
   };
 
