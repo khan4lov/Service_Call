@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { bookingAPI, providerAPI } from "../services/supabase";
+import { supabase } from '../services/supabaseClient';
 import { Database } from "lucide-react";
 
 interface Booking {
