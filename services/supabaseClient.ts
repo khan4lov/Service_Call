@@ -6,14 +6,12 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // =======================================================
-// BOOKINGS API ✅ FINAL WORKING VERSION
+// BOOKINGS API
 // =======================================================
 
 export const bookingAPI = {
-  // ✅ UPDATED: createBooking with Debug Logs
+  // ✅ UPDATED: Clean createBooking function
   createBooking: async (booking: any) => {
-    console.log("📤 Booking payload:", booking);
-
     const { data, error } = await supabase
       .from('bookings')
       .insert({
@@ -33,11 +31,10 @@ export const bookingAPI = {
       .single();
 
     if (error) {
-      console.error("❌ SUPABASE ERROR:", error);
+      console.error("❌ Supabase insert error:", error);
       throw error;
     }
 
-    console.log("✅ BOOKING SAVED IN DB:", data);
     return data;
   },
 
@@ -55,11 +52,10 @@ export const bookingAPI = {
     return data;
   },
 
-  // ✅ ADDED: Required for Admin Dashboard to assign bookings
   updateBookingStatus: async (bookingId: number, status: string, providerUsername?: string) => {
     const updateData: any = { status };
     if (providerUsername) {
-        updateData.provider_id = providerUsername; // Storing username as ID for simplicity
+        updateData.provider_id = providerUsername;
     }
 
     const { data, error } = await supabase
@@ -77,7 +73,7 @@ export const bookingAPI = {
 };
 
 // =======================================================
-// PROVIDER API ✅ ADDED FOR REGISTRATION
+// PROVIDER API
 // =======================================================
 export const providerAPI = {
   registerProvider: async (providerData: any) => {
