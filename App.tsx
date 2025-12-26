@@ -119,11 +119,11 @@ const App: React.FC = () => {
     setIsBookingOpen(true);
   };
 
-  // ✅ UPDATED: Now constructs payload from formData and selectedService state
+  // ✅ FIX: Correct payload construction logic
   const handleConfirmBooking = async (formData: any) => {
     try {
       const payload = {
-        serviceId: selectedService?.id,
+        serviceId: selectedService?.id,   // number/string both ok (API converts)
         serviceName: selectedService?.name,
         category: selectedService?.category,
         date: formData.date,
@@ -131,20 +131,20 @@ const App: React.FC = () => {
         address: formData.address,
         customerName: formData.customerName,
         customerPhone: formData.customerPhone,
-        price: selectedService?.price,
+        price: selectedService?.price
       };
-  
-      console.log("📤 Booking payload:", payload);
-  
-      const savedBooking = await bookingAPI.createBooking(payload);
-  
-      console.log("✅ Saved booking:", savedBooking);
-  
-      setBookings(prev => [savedBooking, ...prev]);
+
+      console.log("📦 App payload:", payload);
+
+      const saved = await bookingAPI.createBooking(payload);
+
+      console.log("✅ BOOKING SAVED:", saved);
+
+      setBookings(prev => [saved, ...prev]);
       setIsBookingOpen(false);
       setSelectedService(null);
     } catch (err) {
-      console.error("❌ Booking failed:", err);
+      console.error("❌ BOOKING FAILED:", err);
       alert("Booking failed. Please try again.");
     }
   };
