@@ -1,26 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 
-// ============================================================================
-// SUPABASE CLIENT
-// ============================================================================
-
-const SUPABASE_URL = "https://jlfscyobofwzvuznwfsj.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."; // same key
+const SUPABASE_URL = 'https://jlfscyobofwzvuznwfsj.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY_HERE';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ============================================================================
-// BOOKINGS API  ✅ FINAL FIXED VERSION
-// ============================================================================
-
+// ================= BOOKINGS API =================
 export const bookingAPI = {
-  createBooking: async (booking: any) => {
+  async createBooking(booking: any) {
     const { data, error } = await supabase
       .from('bookings')
       .insert({
-        // ❌ NEVER send id (Supabase auto generates)
-        // ❌ NEVER send service_id as string (FK breaks)
-        service_id: null, // ✅ FIX: FK issue solved
+        service_id: booking.serviceId,
         service_name: booking.serviceName,
         category: booking.category,
         date: booking.date,
@@ -29,44 +20,31 @@ export const bookingAPI = {
         customer_name: booking.customerName,
         customer_phone: booking.customerPhone,
         price: booking.price,
-        status: 'PENDING',
-        provider_id: null
+        status: 'PENDING'
       })
       .select()
       .single();
 
-    if (error) {
-      console.error("❌ BOOKING INSERT ERROR:", error);
-      throw error;
-    }
-
+    if (error) throw error;
     return data;
   },
 
-  getAllBookings: async () => {
+  async getAllBookings() {
     const { data, error } = await supabase
       .from('bookings')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error("❌ FETCH BOOKINGS ERROR:", error);
-      throw error;
-    }
-
-    return data || [];
+    if (error) throw error;
+    return data;
   },
 
-  updateBookingStatus: async (
-    id: number,
-    status: string,
-    providerId?: string
-  ) => {
+  async updateBookingStatus(id: number, status: string, providerId?: string) {
     const { error } = await supabase
       .from('bookings')
       .update({
         status,
-        provider_id: providerId || null
+        provider_id: providerId ?? null
       })
       .eq('id', id);
 
@@ -74,12 +52,9 @@ export const bookingAPI = {
   }
 };
 
-// ============================================================================
-// PROVIDER REGISTRATION API (UNCHANGED)
-// ============================================================================
-
+// ================= PROVIDERS =================
 export const providerAPI = {
-  registerProvider: async (form: any) => {
+  async registerProvider(form: any) {
     const { error } = await supabase.from('registrations').insert({
       full_name: form.fullName,
       phone: form.phone,
@@ -90,15 +65,5 @@ export const providerAPI = {
     });
 
     if (error) throw error;
-  },
-
-  getAllRegistrations: async () => {
-    const { data, error } = await supabase
-      .from('registrations')
-      .select('*')
-      .order('submitted_at', { ascending: false });
-
-    if (error) throw error;
-    return data;
   }
 };
