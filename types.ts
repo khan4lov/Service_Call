@@ -1,13 +1,12 @@
-// src/types.ts
-
+// ================== ENUMS ==================
 export enum CategoryType {
-  AC_APPLIANCE = "AC & Appliance",
+  AC_APPLIANCE = "AC & Appliances",
   CLEANING = "Cleaning",
   PLUMBING = "Plumbing",
   ELECTRICIAN = "Electrician",
   PAINTING = "Painting",
-  BEAUTY_MEN = "Beauty (Men)",
-  BEAUTY_WOMEN = "Beauty (Women)",
+  BEAUTY_MEN = "Beauty for Men",
+  BEAUTY_WOMEN = "Beauty for Women",
   PEST_CONTROL = "Pest Control",
   CARPENTRY = "Carpentry",
   CAR_RENTAL = "Car Rental",
@@ -26,43 +25,30 @@ export type ViewState =
   | "REGISTER_PROFESSIONAL"
   | "DASHBOARD";
 
-/* ------------------------------------------------------------------ */
-/* SERVICE */
-/* ------------------------------------------------------------------ */
+// ================== SERVICE ==================
 export interface Service {
   id: string;
   name: string;
   description: string;
-  price: number;
   category: CategoryType;
-
-  // ✅ USED EVERYWHERE
+  price: number;
   image?: string;
   duration?: string;
   rating?: number;
+  reviews?: number;
 }
 
-/* ------------------------------------------------------------------ */
-/* USER */
-/* ------------------------------------------------------------------ */
+// ================== USER ==================
 export interface User {
-  id?: number;
   username: string;
   name: string;
   role: "ADMIN" | "PROVIDER" | "USER";
-
-  // ✅ used in constants & login
-  password?: string;
-
-  // ✅ provider dashboard
   category?: CategoryType;
 }
 
-/* ------------------------------------------------------------------ */
-/* BOOKING */
-/* ------------------------------------------------------------------ */
+// ================== BOOKING ==================
 export interface BookingDetails {
-  id?: number;
+  id?: number;                // Supabase auto id
   serviceId: string;
   serviceName: string;
   category: CategoryType;
@@ -73,38 +59,30 @@ export interface BookingDetails {
   customerPhone: string;
   price: number;
   status: "PENDING" | "ASSIGNED" | "COMPLETED";
-
+  provider_id?: string | null;
   createdAt?: string;
-
-  // ✅ supabase column
-  provider_id?: string;
 }
 
-/* ------------------------------------------------------------------ */
-/* PROVIDER */
-/* ------------------------------------------------------------------ */
+// ================== PROVIDER ==================
 export interface Provider {
-  id: string;
+  id: number;
   name: string;
-  rating: number;
-  categories: CategoryType[];
   image?: string;
+  rating: number;
+  bio?: string;
+  categories: CategoryType[];
 }
 
-/* ------------------------------------------------------------------ */
-/* TESTIMONIAL */
-/* ------------------------------------------------------------------ */
+// ================== TESTIMONIAL ==================
 export interface Testimonial {
   id: number;
   name: string;
-  content: string;
   role: string;
+  content: string;
   image: string;
 }
 
-/* ------------------------------------------------------------------ */
-/* REGISTRATION */
-/* ------------------------------------------------------------------ */
+// ================== REGISTRATION ==================
 export interface RegistrationForm {
   fullName: string;
   phone: string;
