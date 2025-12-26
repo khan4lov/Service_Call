@@ -2,6 +2,7 @@
 import React from 'react';
 import type { Provider } from '../types';
 import { Star, ShieldCheck, Briefcase } from 'lucide-react';
+import { CategoryType } from "../types";
 
 interface ProviderCardProps {
   provider: Provider;
@@ -41,7 +42,7 @@ const ProviderCard: React.FC<ProviderCardProps> = ({ provider }) => {
 
       <div className="mt-auto w-full pt-4 border-t border-slate-100">
         <div className="flex flex-wrap gap-2 justify-center">
-          {provider.categories.slice(0, 2).map((cat, idx) => (
+          provider.categories.map((cat: CategoryType, idx: number) => (
               <span key={idx} className="text-[10px] uppercase tracking-wider font-semibold bg-blue-50 text-blue-700 px-2 py-1 rounded-md">
                   {cat.split(' ')[0]}
               </span>
