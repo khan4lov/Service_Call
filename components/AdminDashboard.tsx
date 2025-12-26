@@ -1,57 +1,25 @@
 import { useEffect, useState } from "react";
-import { supabase } from '../services/supabaseClient';
 import { Database } from "lucide-react";
+import { bookingAPI, providerAPI } from "../services/supabaseClient";
+import { BookingDetails, RegistrationForm, User } from "../types";
 
-interface Booking {
-  id: number;
-  customer_name: string;
-  customer_phone: string;
-  service_name: string;
-  category: string;
-  date: string;
-  time: string;
-  address: string;
-  price: number;
-  status: string;
-  provider_id: string | null;
-  created_at: string;
+interface AdminDashboardProps {
+  bookings: BookingDetails[];
+  registrations: RegistrationForm[];
+  users: User[];
+  onAddUser: (user: User) => Promise<void>;
+  onDeleteUser: (username: string) => Promise<void>;
+  onAssignBooking: (bookingId: number, providerUsername: string) => Promise<void>;
 }
 
-interface Registration {
-  id: string;
-  full_name: string;
-  phone: string;
-  category: string;
-  experience: string;
-  city: string;
-  submitted_at: string;
-}
-
-const AdminDashboard = () => {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [registrations, setRegistrations] = useState<Registration[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<
-    "BOOKINGS" | "REGISTRATIONS"
-  >("BOOKINGS");
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const allBookings = await bookingAPI.getAllBookings();
-        const allRegistrations = await providerAPI.getAllRegistrations();
-
-        setBookings(allBookings || []);
-        setRegistrations(allRegistrations || []);
-      } catch (err) {
-        console.error("Admin load error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
+const AdminDashboard: React.FC<AdminDashboardProps> = ({
+  bookings,
+  registrations
+}) => {
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"BOOKINGS" | "REGISTRATIONS">(
+    "BOOKINGS"
+  );
 
   if (loading) {
     return <div className="p-8 text-center">Loading dashboard...</div>;
@@ -96,7 +64,7 @@ const AdminDashboard = () => {
           </button>
         </div>
 
-        {/* BOOKINGS TAB */}
+        {/* BOOKINGS */}
         {activeTab === "BOOKINGS" && (
           <div className="bg-white rounded-lg shadow border overflow-x-auto">
             <table className="w-full text-sm">
@@ -121,9 +89,9 @@ const AdminDashboard = () => {
                 ) : (
                   bookings.map((b) => (
                     <tr key={b.id} className="border-t">
-                      <td className="p-3">{b.customer_name}</td>
-                      <td className="p-3">{b.customer_phone}</td>
-                      <td className="p-3">{b.service_name}</td>
+                      <td className="p-3">{b.customerName}</td>
+                      <td className="p-3">{b.customerPhone}</td>
+                      <td className="p-3">{b.serviceName}</td>
                       <td className="p-3">{b.date}</td>
                       <td className="p-3">{b.time}</td>
                       <td className="p-3 font-semibold">{b.status}</td>
@@ -136,7 +104,7 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* REGISTRATIONS TAB */}
+        {/* REGISTRATIONS */}
         {activeTab === "REGISTRATIONS" && (
           <div className="bg-white rounded-lg shadow border overflow-x-auto">
             <table className="w-full text-sm">
@@ -157,9 +125,9 @@ const AdminDashboard = () => {
                     </td>
                   </tr>
                 ) : (
-                  registrations.map((r) => (
-                    <tr key={r.id} className="border-t">
-                      <td className="p-3">{r.full_name}</td>
+                  registrations.map((r, i) => (
+                    <tr key={i} className="border-t">
+                      <td className="p-3">{r.fullName}</td>
                       <td className="p-3">{r.phone}</td>
                       <td className="p-3">{r.category}</td>
                       <td className="p-3">{r.experience}</td>
