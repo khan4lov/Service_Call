@@ -10,28 +10,32 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // =======================================================
 
 export const bookingAPI = {
-  // ✅ UPDATED: Clean createBooking function
+  // ✅ UPDATED: createBooking with payload logging & type forcing
   createBooking: async (booking: any) => {
+    const payload = {
+      service_id: Number(booking.serviceId), // 🔥 FORCE NUMBER
+      service_name: booking.serviceName,
+      category: booking.category,
+      date: booking.date,
+      time: booking.time,
+      address: booking.address,
+      customer_name: booking.customerName,
+      customer_phone: booking.customerPhone,
+      price: Number(booking.price),
+      status: 'PENDING',
+      provider_id: null
+    };
+
+    console.log("📤 FINAL PAYLOAD:", payload);
+
     const { data, error } = await supabase
       .from('bookings')
-      .insert({
-        service_id: Number(booking.serviceId),
-        service_name: booking.serviceName,
-        category: booking.category,
-        date: booking.date,
-        time: booking.time,
-        address: booking.address,
-        customer_name: booking.customerName,
-        customer_phone: booking.customerPhone,
-        price: booking.price,
-        status: 'PENDING',
-        provider_id: null
-      })
+      .insert(payload)
       .select()
       .single();
 
     if (error) {
-      console.error("❌ Supabase insert error:", error);
+      console.error("❌ SUPABASE ERROR:", error);
       throw error;
     }
 
