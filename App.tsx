@@ -119,10 +119,19 @@ const App: React.FC = () => {
     setIsBookingOpen(true);
   };
 
-  // ✅ UPDATED: Removed optimistic update, relying on API
+  // ✅ UPDATED: Added logs and try/catch for debugging
   const handleConfirmBooking = async (newBooking: BookingDetails) => {
-    await bookingAPI.createBooking(newBooking);
-    refreshData();
+    console.log("📦 Booking payload:", newBooking);
+
+    try {
+      const saved = await bookingAPI.createBooking(newBooking);
+      console.log("✅ Saved to Supabase:", saved);
+
+      refreshData();
+    } catch (err: any) {
+      console.error("❌ SUPABASE INSERT FAILED:", err);
+      alert(err.message || "Booking failed");
+    }
   };
 
   /* ------------------------------------------------------------------
@@ -153,7 +162,6 @@ const App: React.FC = () => {
 
   /* ------------------------------------------------------------------
       Assign / Accept Booking (Admin + Provider)
-      ✅ UPDATED: types changed to number
   ------------------------------------------------------------------ */
   const handleAcceptBooking = async (bookingId: number) => {
     if (!currentUser) return;
@@ -709,7 +717,14 @@ const App: React.FC = () => {
           onConfirmBooking={handleConfirmBooking}
         />
       )}
-      
+
+      <LoginModal 
+        isOpen={isLoginOpen} 
+        onClose={() => setIsLoginOpen(false)} 
+        onLogin={handleLogin}
+        users={users}
+      />
+
     </div>
   );
 };
