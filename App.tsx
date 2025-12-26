@@ -51,7 +51,7 @@ const App: React.FC = () => {
 
 
   /* ------------------------------------------------------------------
-      ✅ UPDATED: REFRESH DATA
+      ✅ REFRESH DATA
   ------------------------------------------------------------------ */
   const refreshData = async () => {
     setIsLoadingData(true);
@@ -119,18 +119,33 @@ const App: React.FC = () => {
     setIsBookingOpen(true);
   };
 
-  // ✅ UPDATED: Added logs and try/catch for debugging
-  const handleConfirmBooking = async (newBooking: BookingDetails) => {
-    console.log("📦 Booking payload:", newBooking);
-
+  // ✅ UPDATED: Now constructs payload from formData and selectedService state
+  const handleConfirmBooking = async (formData: any) => {
     try {
-      const saved = await bookingAPI.createBooking(newBooking);
-      console.log("✅ Saved to Supabase:", saved);
-
-      refreshData();
-    } catch (err: any) {
-      console.error("❌ SUPABASE INSERT FAILED:", err);
-      alert(err.message || "Booking failed");
+      const payload = {
+        serviceId: selectedService?.id,
+        serviceName: selectedService?.name,
+        category: selectedService?.category,
+        date: formData.date,
+        time: formData.time,
+        address: formData.address,
+        customerName: formData.customerName,
+        customerPhone: formData.customerPhone,
+        price: selectedService?.price,
+      };
+  
+      console.log("📤 Booking payload:", payload);
+  
+      const savedBooking = await bookingAPI.createBooking(payload);
+  
+      console.log("✅ Saved booking:", savedBooking);
+  
+      setBookings(prev => [savedBooking, ...prev]);
+      setIsBookingOpen(false);
+      setSelectedService(null);
+    } catch (err) {
+      console.error("❌ Booking failed:", err);
+      alert("Booking failed. Please try again.");
     }
   };
 
